@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Petualangan Dunia Makhluk Hidup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --dark: #2C3E50;
+            --light: #F7FFF7;
+            --success: #88D498;
+            --danger: #FF6B6B;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--light);
+            color: var(--dark);
+            user-select: none; /* Prevent text selection during touch */
+            touch-action: manipulation; /* Optimize touch */
+        }
+
+        /* Utility Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 4px solid white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .btn-cartoon {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-cartoon:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-cartoon:hover:not(:active) {
+            transform: scale(1.05) translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 230, 109, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 230, 109, 0); }
+        }
+
+        @keyframes cloudMove {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100vw); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .floating { animation: float 3s ease-in-out infinite; }
+        .pulsing { animation: pulse-glow 2s infinite; }
+        .pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .shake-wrong { animation: shake 0.4s ease-in-out; }
+
+        /* Scene Backgrounds */
+        .bg-opening {
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF 60%, #90EE90 60%, #3CB371);
+            position: relative;
+        }
+
+        .bg-level-1 { background: linear-gradient(135deg, #A8E6CF, #DCEDC1); }
+        .bg-level-2 { background: linear-gradient(135deg, #FFD3B6, #FFAAA5); }
+        .bg-level-3 { background: linear-gradient(135deg, #87CEEB, #4FACFE); }
+        .bg-level-4 { background: linear-gradient(135deg, #D4A373, #FAEDCD); }
+        .bg-level-5 { background: linear-gradient(135deg, #E0C3FC, #8EC5FC); }
+
+        /* Scenery Elements */
+        .sun {
+            position: absolute; top: 5%; right: 10%; font-size: 80px;
+            animation: pulse-glow 4s infinite;
+        }
+        .cloud {
+            position: absolute; font-size: 60px; opacity: 0.8;
+            animation: cloudMove linear infinite;
+        }
+        .cloud-1 { top: 10%; left: -20%; animation-duration: 25s; }
+        .cloud-2 { top: 25%; left: -20%; animation-duration: 35s; font-size: 80px; }
+        .cloud-3 { top: 15%; left: -20%; animation-duration: 20s; animation-delay: 10s; }
+
+        .scenery-item { position: absolute; font-size: 50px; }
+
+        /* Map Line connecting levels */
+        .map-line {
+            position: absolute;
+            z-index: 0;
+            border: 4px dashed white;
+            opacity: 0.5;
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0; left: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .screen.active { display: flex; }
+
+        /* Multiplayer Layouts */
+        .split-screen {
+            display: grid;
+            width: 100%; height: 100%;
+        }
+        .split-2 { grid-template-columns: 1fr 1fr; }
+        .split-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        
+        .player-zone {
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        /* Custom Progress Bar */
+        .progress-container { width: 100%; background: rgba(255,255,255,0.5); border-radius: 999px; height: 16px; margin-bottom: 10px; overflow: hidden; border: 2px solid white;}
+        .progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.3s ease; }
+
+        /* Confetti Canvas */
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- 1. OPENING SCREEN -->
+    <div id="screen-opening" class="screen active bg-opening flex-col items-center justify-center p-4">
+        <!-- Animated Background Elements -->
+        <div class="sun">🌞</div>
+        <div class="cloud cloud-1">☁️</div>
+        <div class="cloud cloud-2">☁️</div>
+        <div class="cloud cloud-3">☁️</div>
+        <div class="scenery-item" style="bottom: 15%; left: 10%;">🌳</div>
+        <div class="scenery-item" style="bottom: 10%; left: 25%;">🐰</div>
+        <div class="scenery-item" style="bottom: 20%; right: 15%;">🌻</div>
+        <div class="scenery-item" style="bottom: 12%; right: 30%;">🦋</div>
+        <div class="scenery-item" style="bottom: 5%; left: 45%;">🏕️</div>
+
+        <div class="glass-panel text-center p-8 max-w-2xl w-full z-10 pop-in mt-10">
+            <h1 class="text-5xl md:text-6xl font-bold text-[#FF6B6B] mb-2 drop-shadow-md" style="-webkit-text-stroke: 2px white;">
+                Petualangan Dunia
+            </h1>
+            <h1 class="text-4xl md:text-5xl font-bold text-[#4ECDC4] mb-6 drop-shadow-md" style="-webkit-text-stroke: 2px white;">
+                Makhluk Hidup
+            </h1>
+            
+            <p class="text-lg font-medium text-gray-700 mb-8 bg-white/50 rounded-full py-2 px-4 inline-block border-2 border-white">
+                📚 Pembelajaran IPAS SD
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button onclick="startGameMode('solo')" class="btn-cartoon bg-[#FFD166] text-dark font-bold text-2xl py-4 px-6 rounded-2xl border-4 border-white flex flex-col items-center">
+                    <i class="fas fa-user mb-2 text-3xl text-orange-500"></i>
+                    SOLO
+                    <span class="text-sm font-normal mt-1">1 Pemain</span>
+                </button>
+                <button onclick="startGameMode('duel')" class="btn-cartoon bg-[#ef476f] text-white font-bold text-2xl py-4 px-6 rounded-2xl border-4 border-white flex flex-col items-center">
+                    <i class="fas fa-user-friends mb-2 text-3xl text-pink-200"></i>
+                    DUEL
+                    <span class="text-sm font-normal mt-1">2 Pemain</span>
+                </button>
+                <button onclick="startGameMode('squad')" class="btn-cartoon bg-[#118ab2] text-white font-bold text-2xl py-4 px-6 rounded-2xl border-4 border-white flex flex-col items-center">
+                    <i class="fas fa-users mb-2 text-3xl text-blue-200"></i>
+                    SQUAD
+                    <span class="text-sm font-normal mt-1">3-4 Pemain</span>
+                </button>
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button onclick="showInstructions()" class="btn-cartoon bg-white text-gray-700 font-bold py-2 px-6 rounded-full border-2 border-gray-300">
+                    <i class="fas fa-info-circle mr-2"></i> Petunjuk
+                </button>
+                <button onclick="toggleFullscreen()" class="btn-cartoon bg-gray-800 text-white font-bold py-2 px-6 rounded-full border-2 border-gray-600">
+                    <i class="fas fa-expand mr-2"></i> Fullscreen
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center z-10 glass-panel px-6 py-2 mb-4">
+            <p class="text-sm font-bold text-gray-800">Dibuat Oleh:</p>
+            <p class="text-xs text-gray-600 font-medium">Riyan Nur Ichsan • Syariefah Wiraswanti Dwi Nanda • Nabila Nur</p>
+        </div>
+    </div>
+
+    <!-- INSTRUCTIONS MODAL -->
+    <div id="modal-instructions" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full p-8 pop-in relative">
+            <button onclick="document.getElementById('modal-instructions').classList.add('hidden')" class="absolute top-4 right-4 text-3xl text-gray-500 hover:text-red-500"><i class="fas fa-times-circle"></i></button>
+            <h2 class="text-3xl font-bold text-center mb-4 text-[#FF6B6B]">Cara Bermain 🎮</h2>
+            <ul class="text-lg space-y-3 mb-6 text-gray-700 font-medium">
+                <li><i class="fas fa-star text-yellow-400 mr-2"></i> <b>Solo:</b> Jawab pertanyaan dan kumpulkan skor tertinggi. Hati-hati, nyawamu cuma 3!</li>
+                <li><i class="fas fa-bolt text-blue-400 mr-2"></i> <b>Duel/Squad:</b> Siapa cepat dia dapat! Sentuh jawaban yang benar di areamu paling cepat untuk mendapat poin.</li>
+                <li><i class="fas fa-map-marked-alt text-green-500 mr-2"></i> Buka semua 5 level petualangan dengan menyelesaikan level sebelumnya.</li>
+            </ul>
+            <button onclick="document.getElementById('modal-instructions').classList.add('hidden')" class="w-full btn-cartoon bg-[#4ECDC4] text-white font-bold text-xl py-3 rounded-xl border-2 border-white">Mengerti!</button>
+        </div>
+    </div>
+
+    <!-- EXIT CONFIRMATION MODAL -->
+    <div id="modal-exit" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 text-center pop-in relative">
+            <div class="text-6xl mb-4 floating">😢</div>
+            <h2 class="text-2xl font-bold mb-2 text-[#FF6B6B]">Yakin ingin keluar?</h2>
+            <p class="text-gray-700 font-medium mb-6">Progres level ini tidak akan disimpan lho.</p>
+            <div class="flex justify-center gap-4">
+                <button onclick="cancelExit()" class="btn-cartoon bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-xl border-2 border-white">Batal</button>
+                <button onclick="confirmExit()" class="btn-cartoon bg-[#FF6B6B] text-white font-bold py-2 px-6 rounded-xl border-2 border-white">Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN ERROR MODAL -->
+    <div id="modal-fs-error" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 text-center pop-in relative">
+            <div class="text-6xl mb-4 floating">🖥️</div>
+            <h2 class="text-2xl font-bold mb-2 text-[#FF6B6B]">Oops!</h2>
+            <p class="text-gray-700 font-medium mb-6">Layar penuh diblokir oleh sistem pratinjau ini. Silakan unduh dan buka file HTML ini langsung di browser Anda untuk menikmati layar penuh.</p>
+            <button onclick="closeFullscreenError()" class="btn-cartoon bg-[#4ECDC4] text-white font-bold py-2 px-6 rounded-xl border-2 border-white w-full">Mengerti</button>
+        </div>
+    </div>
+
+    <!-- 2. LEVEL MAP SCREEN -->
+    <div id="screen-map" class="screen bg-[#E0F6FF] flex-col relative overflow-hidden">
+        <div class="p-6 flex justify-between items-center z-20 bg-white/50 backdrop-blur-sm border-b-4 border-white">
+            <button onclick="switchScreen('screen-opening')" class="btn-cartoon bg-[#FF6B6B] text-white py-2 px-4 rounded-full font-bold border-2 border-white">
+                <i class="fas fa-arrow-left mr-2"></i> Kembali
+            </button>
+            <h2 class="text-3xl font-bold text-dark"><i class="fas fa-map mr-2"></i> Peta Petualangan</h2>
+            <div class="glass-panel px-4 py-1 font-bold text-xl text-yellow-500 flex items-center">
+                <i class="fas fa-star mr-2"></i> <span id="map-total-score">0</span>
+            </div>
+        </div>
+
+        <div class="flex-1 relative w-full max-w-4xl mx-auto mt-8 h-[80vh]">
+            <!-- Decorative Elements -->
+            <div class="absolute top-0 right-10 text-6xl floating">🏰</div>
+            <div class="absolute bottom-10 left-10 text-6xl floating" style="animation-delay: 1s">🌲</div>
+            
+            <!-- Levels -->
+            <div id="level-nodes" class="relative w-full h-full">
+                <!-- Nodes dynamically generated via JS to position them nicely -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. GAME SCREEN (SOLO) -->
+    <div id="screen-game" class="screen flex-col relative">
+        <!-- Dynamic Background Class applied here via JS -->
+        
+        <div class="p-4 flex justify-between items-center z-20 bg-white/40 backdrop-blur-md shrink-0">
+            <div class="flex items-center gap-2">
+                <button onclick="exitGame()" class="btn-cartoon bg-[#FF6B6B] text-white w-10 h-10 rounded-full font-bold border-2 border-white flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="glass-panel px-4 py-1 font-bold text-lg hidden md:block" id="level-title-display">Level 1</div>
+            </div>
+            
+            <div class="flex-1 mx-4 max-w-md">
+                <div class="progress-container">
+                    <div id="solo-progress" class="progress-bar"></div>
+                </div>
+                <div class="text-center text-sm font-bold text-gray-700" id="solo-question-counter">Soal 1/5</div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="text-2xl" id="solo-lives">❤️❤️❤️</div>
+                <div class="glass-panel px-4 py-2 font-bold text-xl text-yellow-600 flex items-center border-2 border-white bg-white">
+                    ⭐ <span id="solo-score" class="ml-1">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center p-6 z-10 w-full max-w-3xl mx-auto relative">
+            
+            <!-- Question Box -->
+            <div class="glass-panel w-full p-8 mb-8 text-center pop-in relative">
+                <div id="question-image" class="text-8xl mb-4 floating">🤔</div>
+                <h3 id="question-text" class="text-3xl md:text-4xl font-bold text-dark leading-tight">Pertanyaan muncul di sini?</h3>
+            </div>
+
+            <!-- Answers Grid -->
+            <div id="answers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <!-- Buttons injected by JS -->
+            </div>
+
+            <!-- Feedback Overlay (Hidden by default) -->
+            <div id="feedback-overlay" class="absolute inset-0 flex items-center justify-center z-50 hidden pointer-events-none">
+                <div id="feedback-content" class="text-center pop-in">
+                    <!-- Icon and Text injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MULTIPLAYER SCREEN (DUEL/SQUAD) -->
+    <div id="screen-multiplayer" class="screen flex-col bg-gray-900 relative">
+        <!-- Top Header & Question Section -->
+        <div class="w-full flex flex-col items-center z-40 bg-white/95 shadow-md shrink-0 pt-2 md:pt-4">
+            <!-- Header Controls -->
+            <div class="w-full flex justify-between items-center p-3 border-b-2 border-gray-200 bg-gray-50">
+                 <button onclick="exitGame()" class="text-red-500 hover:scale-110 transition text-2xl ml-2"><i class="fas fa-times-circle"></i></button>
+                 <div class="flex items-center font-bold text-base md:text-xl text-dark bg-white px-4 py-1 rounded-full border-2 border-gray-300">
+                     <span id="mp-level-title" class="mr-3 border-r-2 border-gray-300 pr-3">Level 1</span>
+                     <span id="mp-question-counter" class="text-blue-600">Soal 1/5</span>
+                 </div>
+                 <div class="w-8"></div> <!-- spacer for centering -->
+            </div>
+
+            <!-- Question Box (Now static at the top) -->
+            <div id="mp-question-box" class="w-full max-w-4xl p-2 md:p-3 text-center pop-in">
+                <div class="flex items-center justify-center gap-3 md:gap-4 mt-1">
+                    <div id="mp-question-image" class="text-4xl md:text-5xl drop-shadow-md">🤔</div>
+                    <h3 id="mp-question-text" class="text-lg md:text-2xl font-bold text-dark">Pertanyaan?</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Central Feedback Overlay (Hidden by default) -->
+        <div id="mp-feedback-overlay" class="absolute inset-0 items-center justify-center z-50 bg-black/50 hidden">
+            <div id="mp-feedback" class="p-8 rounded-3xl text-center pop-in border-8 border-white shadow-2xl">
+                <div id="mp-feedback-icon" class="text-8xl mb-4 drop-shadow-md">⭐</div>
+                <div id="mp-feedback-text" class="text-3xl md:text-5xl font-bold text-white drop-shadow-lg" style="-webkit-text-stroke: 1px #333;">Pemain 1 Benar!</div>
+            </div>
+        </div>
+
+        <!-- Split Screen Zones injected by JS -->
+        <div id="mp-zones" class="flex-1 split-screen split-2">
+            <!-- Zones -->
+        </div>
+    </div>
+
+    <!-- 5. RESULT SCREEN -->
+    <div id="screen-result" class="screen bg-level-5 flex-col items-center justify-center p-4">
+        <div class="glass-panel max-w-xl w-full p-8 text-center pop-in z-10 border-8 border-white">
+            <div id="result-icon" class="text-8xl mb-4 pulsing">🏆</div>
+            <h2 id="result-title" class="text-5xl font-bold text-[#FF6B6B] mb-2">Luar Biasa!</h2>
+            <p id="result-message" class="text-2xl font-medium text-gray-700 mb-6">Kamu berhasil menyelesaikan level ini.</p>
+            
+            <div class="bg-yellow-100 rounded-2xl p-6 mb-8 border-4 border-yellow-300 inline-block">
+                <p class="text-lg font-bold text-yellow-600 uppercase tracking-wide mb-1">Total Skor</p>
+                <p id="result-score" class="text-6xl font-bold text-yellow-500" style="-webkit-text-stroke: 2px white;">100</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="switchScreen('screen-map')" class="btn-cartoon bg-[#4ECDC4] text-white font-bold text-xl py-3 px-8 rounded-full border-4 border-white w-full md:w-auto">
+                    <i class="fas fa-map mr-2"></i> Peta Level
+                </button>
+                <button onclick="startGameMode(gameState.mode)" class="btn-cartoon bg-[#FFD166] text-dark font-bold text-xl py-3 px-8 rounded-full border-4 border-white w-full md:w-auto">
+                    <i class="fas fa-redo mr-2"></i> Main Lagi
+                </button>
+                <button onclick="switchScreen('screen-opening')" class="btn-cartoon bg-[#FF6B6B] text-white font-bold text-xl py-3 px-8 rounded-full border-4 border-white w-full md:w-auto">
+                    <i class="fas fa-home mr-2"></i> Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const levelData = [
+            {
+                id: 1, title: "Hutan Hijau", theme: "bg-level-1", icon: "🌿", pos: {x: 20, y: 80},
+                desc: "Makhluk Hidup vs Benda Mati",
+                questions: [
+                    { q: "Yang termasuk makhluk hidup adalah...", img: "🤔", options: [{t:"Ayam", c:true, i:"🐓"}, {t:"Batu", c:false, i:"🪨"}, {t:"Meja", c:false, i:"🪑"}, {t:"Buku", c:false, i:"📚"}] },
+                    { q: "Benda mati tidak bisa...", img: "🪨", options: [{t:"Tumbuh besar", c:true, i:"🌱"}, {t:"Berwarna", c:false, i:"🎨"}, {t:"Pecah", c:false, i:"🔨"}, {t:"Diam", c:false, i:"🤫"}] },
+                    { q: "Manakah yang merupakan benda mati?", img: "🔍", options: [{t:"Mobil", c:true, i:"🚗"}, {t:"Pohon", c:false, i:"🌳"}, {t:"Kucing", c:false, i:"🐈"}, {t:"Burung", c:false, i:"🐦"}] },
+                    { q: "Manusia adalah makhluk hidup karena...", img: "👨‍👩‍👧", options: [{t:"Bernapas", c:true, i:"🫁"}, {t:"Memakai baju", c:false, i:"👕"}, {t:"Bisa naik mobil", c:false, i:"🚗"}, {t:"Punya rumah", c:false, i:"🏠"}] },
+                    { q: "Manakah kelompok makhluk hidup?", img: "👥", options: [{t:"Ikan, Rumput, Sapi", c:true, i:"🐟🌱🐄"}, {t:"Batu, Air, Tanah", c:false, i:"🪨💧🌍"}, {t:"Meja, Kursi, Lemari", c:false, i:"🪑🚪"}, {t:"Buku, Pensil, Tas", c:false, i:"📚✏️"}] }
+                ]
+            },
+            {
+                id: 2, title: "Kebun Ceria", theme: "bg-level-2", icon: "🌻", pos: {x: 50, y: 60},
+                desc: "Ciri-ciri Makhluk Hidup",
+                questions: [
+                    { q: "Makhluk hidup membutuhkan ... untuk bertahan hidup.", img: "🍽️", options: [{t:"Makanan & Air", c:true, i:"🍲💧"}, {t:"Batu & Pasir", c:false, i:"🪨🏜️"}, {t:"Plastik", c:false, i:"🛍️"}, {t:"Emas", c:false, i:"🥇"}] },
+                    { q: "Biji kecambah yang menjadi tumbuhan besar membuktikan bahwa makhluk hidup...", img: "🌱", options: [{t:"Tumbuh", c:true, i:"📈"}, {t:"Berkarat", c:false, i:"🟫"}, {t:"Mengecil", c:false, i:"📉"}, {t:"Membeku", c:false, i:"🧊"}] },
+                    { q: "Ayam bertelur untuk menghasilkan anak. Ini disebut...", img: "🥚", options: [{t:"Berkembang biak", c:true, i:"🐣"}, {t:"Bernapas", c:false, i:"💨"}, {t:"Bergerak", c:false, i:"🏃"}, {t:"Makan", c:false, i:"🍽️"}] },
+                    { q: "Ciri makhluk hidup saat cuaca panas adalah...", img: "☀️", options: [{t:"Berkeringat", c:true, i:"💦"}, {t:"Meleleh", c:false, i:"🫠"}, {t:"Membeku", c:false, i:"❄️"}, {t:"Pecah", c:false, i:"💥"}] },
+                    { q: "Tumbuhan bergerak dengan cara...", img: "🌻", options: [{t:"Akar menuju air", c:true, i:"💧"}, {t:"Berlari cepat", c:false, i:"🏃"}, {t:"Terbang", c:false, i:"🦅"}, {t:"Berenang", c:false, i:"🏊"}] }
+                ]
+            },
+            {
+                id: 3, title: "Sungai Pintar", theme: "bg-level-3", icon: "🌊", pos: {x: 80, y: 40},
+                desc: "Jenis Makhluk Hidup",
+                questions: [
+                    { q: "Kucing, sapi, dan ikan termasuk jenis...", img: "🐈🐄🐟", options: [{t:"Hewan", c:true, i:"🐾"}, {t:"Tumbuhan", c:false, i:"🌿"}, {t:"Manusia", c:false, i:"🧑"}, {t:"Benda Mati", c:false, i:"🪨"}] },
+                    { q: "Pohon mangga dan rumput adalah...", img: "🥭", options: [{t:"Tumbuhan", c:true, i:"🌱"}, {t:"Hewan", c:false, i:"🐾"}, {t:"Manusia", c:false, i:"🧑"}, {t:"Mainan", c:false, i:"🧸"}] },
+                    { q: "Makhluk hidup yang memiliki akal budi adalah...", img: "🧠", options: [{t:"Manusia", c:true, i:"🧑‍🏫"}, {t:"Tumbuhan", c:false, i:"🌴"}, {t:"Hewan", c:false, i:"🐘"}, {t:"Robot", c:false, i:"🤖"}] },
+                    { q: "Hewan yang hidup di air adalah...", img: "💧", options: [{t:"Ikan", c:true, i:"🐟"}, {t:"Burung", c:false, i:"🦅"}, {t:"Kucing", c:false, i:"🐈"}, {t:"Sapi", c:false, i:"🐄"}] },
+                    { q: "Tumbuhan yang sering ada di rumah...", img: "🏡", options: [{t:"Bunga Mawar", c:true, i:"🌹"}, {t:"Batu bata", c:false, i:"🧱"}, {t:"Sofa", c:false, i:"🛋️"}, {t:"Televisi", c:false, i:"📺"}] }
+                ]
+            },
+            {
+                id: 4, title: "Gua Tantangan", theme: "bg-level-4", icon: "🏕️", pos: {x: 50, y: 20},
+                desc: "Tebak Gambar & Kelompok",
+                questions: [
+                    { q: "Cari yang merupakan HEWAN!", img: "🐾", options: [{t:"Harimau", c:true, i:"🐅"}, {t:"Kaktus", c:false, i:"🌵"}, {t:"Sepeda", c:false, i:"🚲"}, {t:"Gelas", c:false, i:"🥛"}] },
+                    { q: "Cari yang merupakan TUMBUHAN!", img: "🌿", options: [{t:"Pohon Pisang", c:true, i:"🍌"}, {t:"Sapi", c:false, i:"🐄"}, {t:"Buku", c:false, i:"📖"}, {t:"Sepatu", c:false, i:"👟"}] },
+                    { q: "Cari yang merupakan BENDA MATI!", img: "🪨", options: [{t:"Kipas Angin", c:true, i:"🎐"}, {t:"Ular", c:false, i:"🐍"}, {t:"Bunga", c:false, i:"🌷"}, {t:"Anak kecil", c:false, i:"🧒"}] },
+                    { q: "Gambar manakah yang bisa bernapas?", img: "💨", options: [{t:"Kelinci", c:true, i:"🐰"}, {t:"Boneka", c:false, i:"🧸"}, {t:"Batu", c:false, i:"🪨"}, {t:"Mobil", c:false, i:"🚗"}] },
+                    { q: "Gambar manakah yang bisa tumbuh?", img: "📈", options: [{t:"Anak Kucing", c:true, i:"🐈"}, {t:"Robot mainan", c:false, i:"🤖"}, {t:"Pensil", c:false, i:"✏️"}, {t:"Gunting", c:false, i:"✂️"}] }
+                ]
+            },
+            {
+                id: 5, title: "Istana Juara", theme: "bg-level-5", icon: "🏆", pos: {x: 20, y: 15},
+                desc: "Kuis Akhir Campuran",
+                questions: [
+                    { q: "Berjalan, berlari, dan terbang adalah contoh...", img: "🏃", options: [{t:"Bergerak", c:true, i:"💨"}, {t:"Makan", c:false, i:"🍽️"}, {t:"Tidur", c:false, i:"😴"}, {t:"Marah", c:false, i:"😡"}] },
+                    { q: "Apakah matahari termasuk makhluk hidup?", img: "☀️", options: [{t:"Bukan", c:true, i:"❌"}, {t:"Ya", c:false, i:"✅"}, {t:"Mungkin", c:false, i:"❓"}, {t:"Kadang-kadang", c:false, i:"🤷"}] },
+                    { q: "Pohon mendapatkan makanan dengan cara...", img: "🌳", options: [{t:"Menyerap dari tanah", c:true, i:"💧"}, {t:"Berburu hewan", c:false, i:"🐅"}, {t:"Beli di pasar", c:false, i:"🛒"}, {t:"Meminta", c:false, i:"🙏"}] },
+                    { q: "Benda yang dibuat oleh manusia disebut...", img: "🔨", options: [{t:"Benda Mati", c:true, i:"🪑"}, {t:"Hewan", c:false, i:"🐾"}, {t:"Tumbuhan", c:false, i:"🌿"}, {t:"Makhluk gaib", c:false, i:"👻"}] },
+                    { q: "Ciri utama yang membedakan makhluk hidup dan benda mati adalah...", img: "⚖️", options: [{t:"Bernapas", c:true, i:"🫁"}, {t:"Punya warna", c:false, i:"🎨"}, {t:"Punya bentuk", c:false, i:"📐"}, {t:"Punya berat", c:false, i:"⚖️"}] }
+                ]
+            }
+        ];
+
+        const mpColors = [
+            { bg: 'bg-red-500', hover: 'hover:bg-red-600', border: 'border-red-700', text: 'text-white', name: 'Merah' },
+            { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', border: 'border-blue-700', text: 'text-white', name: 'Biru' },
+            { bg: 'bg-green-500', hover: 'hover:bg-green-600', border: 'border-green-700', text: 'text-white', name: 'Hijau' },
+            { bg: 'bg-yellow-400', hover: 'hover:bg-yellow-500', border: 'border-yellow-600', text: 'text-dark', name: 'Kuning' }
+        ];
+
+        // --- STATE ---
+        let gameState = {
+            mode: 'solo', // solo, duel, squad
+            currentLevelId: 1,
+            unlockedLevel: parseInt(localStorage.getItem('unlockedLevel')) || 1,
+            totalScore: parseInt(localStorage.getItem('totalScore')) || 0,
+            
+            // In-game state
+            questions: [],
+            currentQIndex: 0,
+            lives: 3,
+            players: [], // [{score: 0, colorObj: {}}, ...]
+            isAnswering: false
+        };
+
+        // --- AUDIO SYSTEM (Web Audio API Synthesizer) ---
+        // Generates simple sounds without external files
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const Sound = {
+            click: () => playTone(600, 'sine', 0.1),
+            correct: () => {
+                playTone(523.25, 'triangle', 0.1, 0.2); // C5
+                setTimeout(() => playTone(659.25, 'triangle', 0.1, 0.2), 100); // E5
+                setTimeout(() => playTone(783.99, 'triangle', 0.3, 0.2), 200); // G5
+            },
+            wrong: () => {
+                playTone(300, 'sawtooth', 0.2, 0.1);
+                setTimeout(() => playTone(250, 'sawtooth', 0.4, 0.1), 150);
+            },
+            win: () => {
+                [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2, 0.1), i * 150));
+            },
+            lose: () => {
+                [400, 350, 300, 250].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.3, 0.1), i * 200));
+            }
+        };
+
+        // --- CORE FUNCTIONS ---
+
+        function init() {
+            document.getElementById('map-total-score').innerText = gameState.totalScore;
+            buildMap();
+        }
+
+        function switchScreen(screenId) {
+            Sound.click();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function toggleFullscreen() {
+            Sound.click();
+            try {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                        showFullscreenError();
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            } catch (err) {
+                showFullscreenError();
+            }
+        }
+
+        function showFullscreenError() {
+            document.getElementById('modal-fs-error').classList.remove('hidden');
+            document.getElementById('modal-fs-error').classList.add('flex');
+        }
+
+        function closeFullscreenError() {
+            Sound.click();
+            document.getElementById('modal-fs-error').classList.add('hidden');
+            document.getElementById('modal-fs-error').classList.remove('flex');
+        }
+
+        function showInstructions() {
+            Sound.click();
+            document.getElementById('modal-instructions').classList.remove('hidden');
+            document.getElementById('modal-instructions').classList.add('flex');
+        }
+
+        // --- MAP FUNCTIONS ---
+        function buildMap() {
+            const container = document.getElementById('level-nodes');
+            container.innerHTML = '';
+            
+            // Draw path (simplified with basic lines via CSS/HTML positioning)
+            // For a perfect curve we'd use SVG, but HTML elements are fine for this constraint.
+
+            levelData.forEach((lvl, index) => {
+                const isUnlocked = lvl.id <= gameState.unlockedLevel;
+                const node = document.createElement('div');
+                node.className = `absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-transform hover:scale-110 z-10`;
+                node.style.left = `${lvl.pos.x}%`;
+                node.style.top = `${lvl.pos.y}%`;
+
+                const btnClass = isUnlocked 
+                    ? `w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl flex items-center justify-center text-4xl cursor-pointer ${lvl.theme} btn-cartoon z-10`
+                    : `w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-gray-400 bg-gray-300 shadow-inner flex items-center justify-center text-4xl opacity-70 z-10`;
+
+                const icon = isUnlocked ? lvl.icon : '🔒';
+                const pulseClass = (lvl.id === gameState.unlockedLevel) ? 'pulsing' : '';
+
+                node.innerHTML = `
+                    <div class="${btnClass} ${pulseClass}" onclick="if(${isUnlocked}) startLevel(${lvl.id})">
+                        ${icon}
+                    </div>
+                    <div class="glass-panel mt-2 px-3 py-1 text-sm md:text-base font-bold text-center whitespace-nowrap hidden md:block">
+                        Level ${lvl.id}: ${lvl.title}
+                    </div>
+                `;
+                container.appendChild(node);
+
+                // Draw simple line to next node
+                if (index < levelData.length - 1) {
+                    const nextLvl = levelData[index + 1];
+                    const line = document.createElement('div');
+                    line.className = 'map-line';
+                    
+                    // Basic math to draw line between two percentage points
+                    const dx = nextLvl.pos.x - lvl.pos.x;
+                    const dy = nextLvl.pos.y - lvl.pos.y;
+                    const length = Math.sqrt(dx*dx + dy*dy);
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                    line.style.width = `${length}vw`; // Approximation
+                    line.style.left = `${lvl.pos.x}%`;
+                    line.style.top = `${lvl.pos.y}%`;
+                    line.style.transformOrigin = '0 50%';
+                    line.style.transform = `rotate(${angle}deg)`;
+                    
+                    container.appendChild(line);
+                }
+            });
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGameMode(mode) {
+            gameState.mode = mode;
+            switchScreen('screen-map');
+        }
+
+        function startLevel(levelId) {
+            gameState.currentLevelId = levelId;
+            const level = levelData.find(l => l.id === levelId);
+            
+            // Shuffle questions and options
+            gameState.questions = [...level.questions].sort(() => 0.5 - Math.random());
+            gameState.questions.forEach(q => {
+                q.options = [...q.options].sort(() => 0.5 - Math.random());
+            });
+            
+            gameState.currentQIndex = 0;
+            gameState.isAnswering = false;
+
+            if (gameState.mode === 'solo') {
+                gameState.players = [{score: 0, colorObj: mpColors[0]}];
+                gameState.lives = 3;
+                updateSoloUI();
+                
+                // Set theme
+                const gameScreen = document.getElementById('screen-game');
+                gameScreen.className = `screen flex-col relative ${level.theme}`;
+                document.getElementById('level-title-display').innerText = `Level ${level.id}: ${level.title}`;
+                
+                switchScreen('screen-game');
+                renderSoloQuestion();
+            } else {
+                // Multiplayer (Duel / Squad)
+                const playerCount = gameState.mode === 'duel' ? 2 : 4;
+                gameState.players = Array(playerCount).fill(0).map((_, i) => ({ score: 0, colorObj: mpColors[i], name: mpColors[i].name }));
+                
+                document.getElementById('mp-level-title').innerText = `Lvl ${level.id}`;
+                setupMultiplayerLayout(playerCount);
+                
+                switchScreen('screen-multiplayer');
+                renderMultiplayerQuestion();
+            }
+        }
+
+        function exitGame() {
+            Sound.click();
+            document.getElementById('modal-exit').classList.remove('hidden');
+            document.getElementById('modal-exit').classList.add('flex');
+        }
+
+        function cancelExit() {
+            Sound.click();
+            document.getElementById('modal-exit').classList.add('hidden');
+            document.getElementById('modal-exit').classList.remove('flex');
+        }
+
+        function confirmExit() {
+            Sound.click();
+            document.getElementById('modal-exit').classList.add('hidden');
+            document.getElementById('modal-exit').classList.remove('flex');
+            switchScreen('screen-map');
+        }
+
+        // --- SOLO MODE UI ---
+        
+        function updateSoloUI() {
+            document.getElementById('solo-score').innerText = gameState.players[0].score;
+            document.getElementById('solo-lives').innerText = '❤️'.repeat(gameState.lives) + '🖤'.repeat(3 - gameState.lives);
+            
+            const progress = ((gameState.currentQIndex) / gameState.questions.length) * 100;
+            document.getElementById('solo-progress').style.width = `${progress}%`;
+            document.getElementById('solo-question-counter').innerText = `Soal ${gameState.currentQIndex + 1}/${gameState.questions.length}`;
+        }
+
+        function renderSoloQuestion() {
+            if (gameState.currentQIndex >= gameState.questions.length) {
+                endLevel();
+                return;
+            }
+
+            updateSoloUI();
+            const q = gameState.questions[gameState.currentQIndex];
+            
+            const qBox = document.querySelector('#screen-game .glass-panel');
+            qBox.classList.remove('pop-in');
+            void qBox.offsetWidth; // trigger reflow
+            qBox.classList.add('pop-in');
+
+            document.getElementById('question-image').innerText = q.img;
+            document.getElementById('question-text').innerText = q.q;
+
+            const container = document.getElementById('answers-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                // Use different colors for options based on index for colorful UI
+                const bgColors = ['bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-purple-400'];
+                
+                btn.className = `btn-cartoon ${bgColors[idx%4]} text-white font-bold text-xl md:text-2xl p-4 md:p-6 rounded-2xl border-4 border-white flex items-center justify-center gap-4`;
+                btn.innerHTML = `<span class="text-4xl drop-shadow-md">${opt.i}</span> <span>${opt.t}</span>`;
+                btn.onclick = () => handleSoloAnswer(opt.c, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleSoloAnswer(isCorrect, btnElement) {
+            if (gameState.isAnswering) return;
+            gameState.isAnswering = true;
+
+            const overlay = document.getElementById('feedback-overlay');
+            const content = document.getElementById('feedback-content');
+            overlay.classList.remove('hidden');
+
+            if (isCorrect) {
+                Sound.correct();
+                btnElement.classList.add('ring-8', 'ring-green-400');
+                gameState.players[0].score += 20;
+                content.innerHTML = `<div class="text-9xl mb-4 pulsing">🌟</div><h2 class="text-5xl font-bold text-white drop-shadow-lg" style="-webkit-text-stroke: 2px #2C3E50;">Hebat! Benar!</h2>`;
+                createMiniConfetti();
+            } else {
+                Sound.wrong();
+                btnElement.classList.add('opacity-50');
+                const qBox = document.querySelector('#screen-game .glass-panel');
+                qBox.classList.add('shake-wrong');
+                setTimeout(() => qBox.classList.remove('shake-wrong'), 400);
+                
+                gameState.lives--;
+                content.innerHTML = `<div class="text-9xl mb-4">😅</div><h2 class="text-5xl font-bold text-white drop-shadow-lg" style="-webkit-text-stroke: 2px #2C3E50;">Coba Lagi!</h2>`;
+                updateSoloUI();
+            }
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                
+                if (gameState.lives <= 0) {
+                    endLevel(false);
+                } else {
+                    gameState.currentQIndex++;
+                    gameState.isAnswering = false;
+                    renderSoloQuestion();
+                }
+            }, 1500);
+        }
+
+        // --- MULTIPLAYER MODE UI ---
+
+        function setupMultiplayerLayout(playerCount) {
+            const zonesContainer = document.getElementById('mp-zones');
+            zonesContainer.innerHTML = '';
+            zonesContainer.className = `flex-1 split-screen ${playerCount === 2 ? 'split-2' : 'split-4'}`;
+
+            for (let i = 0; i < playerCount; i++) {
+                const pInfo = gameState.players[i];
+                const zone = document.createElement('div');
+                
+                // Rotation removed so text is upright
+                zone.className = `player-zone ${pInfo.colorObj.bg}`;
+                zone.id = `zone-p${i}`;
+                
+                zone.innerHTML = `
+                    <div class="w-full flex justify-between items-center mb-3">
+                        <div class="glass-panel px-3 py-1 font-bold text-sm md:text-lg ${pInfo.colorObj.text} shadow-sm">
+                            Pemain ${i+1}
+                        </div>
+                        <div class="glass-panel bg-white px-3 py-1 font-bold text-sm md:text-lg text-yellow-500 shadow-sm border-2 border-yellow-300">
+                            ⭐ <span id="score-p${i}">0</span>
+                        </div>
+                    </div>
+                    <div id="answers-p${i}" class="grid grid-cols-2 gap-2 md:gap-3 w-full max-w-sm flex-1 content-center pb-2">
+                        <!-- Buttons injected here -->
+                    </div>
+                `;
+                zonesContainer.appendChild(zone);
+            }
+        }
+
+        function renderMultiplayerQuestion() {
+            if (gameState.currentQIndex >= gameState.questions.length) {
+                endLevel();
+                return;
+            }
+
+            document.getElementById('mp-question-counter').innerText = `Soal ${gameState.currentQIndex + 1}/${gameState.questions.length}`;
+            
+            const q = gameState.questions[gameState.currentQIndex];
+            
+            const qBox = document.getElementById('mp-question-box');
+            qBox.classList.remove('pop-in');
+            void qBox.offsetWidth;
+            qBox.classList.add('pop-in');
+            
+            document.getElementById('mp-question-image').innerText = q.img;
+            document.getElementById('mp-question-text').innerText = q.q;
+
+            // Render options in ALL zones
+            gameState.players.forEach((_, pIndex) => {
+                const container = document.getElementById(`answers-p${pIndex}`);
+                container.innerHTML = '';
+                
+                q.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = `btn-cartoon bg-white text-dark font-bold text-base md:text-lg p-2 rounded-xl border-4 ${gameState.players[pIndex].colorObj.border} flex flex-col items-center justify-center`;
+                    btn.innerHTML = `<span class="text-3xl mb-1">${opt.i}</span><span class="text-sm leading-tight">${opt.t}</span>`;
+                    
+                    // Touch events for faster response on mobile
+                    btn.addEventListener('pointerdown', (e) => {
+                        e.preventDefault(); // Prevent double firing
+                        handleMultiplayerAnswer(opt.c, pIndex);
+                    });
+                    
+                    container.appendChild(btn);
+                });
+            });
+        }
+
+        function handleMultiplayerAnswer(isCorrect, pIndex) {
+            if (gameState.isAnswering) return;
+            gameState.isAnswering = true;
+
+            const pInfo = gameState.players[pIndex];
+            const feedbackOverlay = document.getElementById('mp-feedback-overlay');
+            const feedback = document.getElementById('mp-feedback');
+            const feedbackIcon = document.getElementById('mp-feedback-icon');
+            const feedbackText = document.getElementById('mp-feedback-text');
+
+            feedbackOverlay.classList.remove('hidden');
+            feedbackOverlay.classList.add('flex');
+            
+            // Re-trigger animation
+            feedback.classList.remove('pop-in');
+            void feedback.offsetWidth;
+            feedback.classList.add('pop-in');
+
+            if (isCorrect) {
+                Sound.correct();
+                pInfo.score += 10;
+                document.getElementById(`score-p${pIndex}`).innerText = pInfo.score;
+                
+                feedback.className = `p-8 rounded-3xl text-center pop-in border-8 border-white shadow-2xl ${pInfo.colorObj.bg}`;
+                feedbackIcon.innerText = "⭐";
+                feedbackText.innerText = `Tim ${pInfo.name} Benar! +10`;
+                createMiniConfetti();
+            } else {
+                Sound.wrong();
+                feedback.className = `p-8 rounded-3xl text-center pop-in border-8 border-white shadow-2xl bg-gray-800`;
+                feedbackIcon.innerText = "❌";
+                feedbackText.innerText = `Tim ${pInfo.name} Salah!`;
+            }
+
+            setTimeout(() => {
+                feedbackOverlay.classList.add('hidden');
+                feedbackOverlay.classList.remove('flex');
+                
+                gameState.currentQIndex++;
+                gameState.isAnswering = false;
+                renderMultiplayerQuestion();
+            }, 2000);
+        }
+
+
+        // --- END GAME & RESULTS ---
+
+        function endLevel(completed = true) {
+            let finalScore = 0;
+            let titleText = "";
+            let msgText = "";
+            let iconText = "";
+
+            if (gameState.mode === 'solo') {
+                finalScore = gameState.players[0].score;
+                if (completed) {
+                    Sound.win();
+                    titleText = "Luar Biasa!";
+                    msgText = `Kamu berhasil menyelesaikan Level ${gameState.currentLevelId}!`;
+                    iconText = "🏆";
+                    
+                    // Unlock logic
+                    if (gameState.currentLevelId === gameState.unlockedLevel && gameState.unlockedLevel < 5) {
+                        gameState.unlockedLevel++;
+                        localStorage.setItem('unlockedLevel', gameState.unlockedLevel);
+                    }
+                    
+                    gameState.totalScore += finalScore;
+                    localStorage.setItem('totalScore', gameState.totalScore);
+                    document.getElementById('map-total-score').innerText = gameState.totalScore;
+                    
+                    startConfetti();
+                } else {
+                    Sound.lose();
+                    titleText = "Yah, Game Over!";
+                    msgText = "Nyawamu habis. Jangan menyerah, coba lagi!";
+                    iconText = "💔";
+                }
+            } else {
+                // Multiplayer result
+                Sound.win();
+                startConfetti();
+                // Find highest score
+                let maxScore = -1;
+                let winners = [];
+                gameState.players.forEach((p, idx) => {
+                    if(p.score > maxScore) { maxScore = p.score; winners = [idx]; }
+                    else if(p.score === maxScore) { winners.push(idx); }
+                });
+
+                if(winners.length > 1) {
+                    titleText = "Seri!";
+                    msgText = "Pertarungan yang sangat sengit!";
+                    iconText = "🤝";
+                    finalScore = maxScore;
+                } else {
+                    const winnerInfo = gameState.players[winners[0]];
+                    titleText = `Tim ${winnerInfo.name} Menang!`;
+                    msgText = "Kecepatan dan ketepatan luar biasa!";
+                    iconText = "👑";
+                    finalScore = maxScore;
+                }
+            }
+
+            document.getElementById('result-title').innerText = titleText;
+            document.getElementById('result-message').innerText = msgText;
+            document.getElementById('result-icon').innerText = iconText;
+            document.getElementById('result-score').innerText = finalScore;
+
+            switchScreen('screen-result');
+            buildMap(); // Rebuild map in case new level unlocked
+        }
+
+
+        // --- VISUAL EFFECTS (CONFETTI) ---
+        let confettiInterval;
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const pieces = [];
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+
+            for (let i = 0; i < 100; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    vx: Math.random() * 4 - 2,
+                    vy: Math.random() * 3 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5
+                });
+            }
+
+            function update() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rot += p.rotSpeed;
+                    
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    ctx.restore();
+                });
+            }
+
+            clearInterval(confettiInterval);
+            confettiInterval = setInterval(update, 1000/60);
+            
+            // Stop after 5 seconds
+            setTimeout(() => {
+                clearInterval(confettiInterval);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }, 5000);
+        }
+
+        // Simpler DOM based effect for in-game correct answers
+        function createMiniConfetti() {
+            for(let i=0; i<15; i++) {
+                const star = document.createElement('div');
+                star.innerText = "⭐";
+                star.style.position = 'absolute';
+                star.style.left = '50%';
+                star.style.top = '50%';
+                star.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                star.style.pointerEvents = 'none';
+                star.style.zIndex = '9999';
+                star.style.transition = 'all 1s cubic-bezier(0.1, 0.8, 0.3, 1)';
+                
+                document.body.appendChild(star);
+                
+                // Animate
+                setTimeout(() => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 150 + 50;
+                    star.style.transform = `translate(${Math.cos(angle)*radius}px, ${Math.sin(angle)*radius}px) rotate(${Math.random()*360}deg)`;
+                    star.style.opacity = '0';
+                }, 10);
+                
+                // Cleanup
+                setTimeout(() => star.remove(), 1000);
+            }
+        }
+
+        // Initialize App
+        window.onload = init;
+
+    </script>
+</body>
+</html>
